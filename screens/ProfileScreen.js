@@ -1,19 +1,18 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native'
 import db, { auth } from '../Firebase'
 
 const ProfileScreen = ({ navigation }) => {
-    const [name, setName] = useState('')
     const [profile, setProfile] = useState()
 
     useEffect(() => {
         db.collection("posts").where("email", '==', auth?.currentUser?.email).onSnapshot((snapshot) => {
-            snapshot.forEach(async (doc) => {
-                await setProfile(doc.data().image)
-                await setName(doc.data().name)
+            snapshot.forEach(doc => {
+                setProfile(doc.data().image)
             })
         })
     }, [])
+    
 
     const Out = async () => {
         await auth.signOut()
@@ -25,7 +24,7 @@ const ProfileScreen = ({ navigation }) => {
             <View style={styles.profileContainer}>
                 <Image source={{uri: profile}} style={styles.image} />
             </View>
-            <Text style={styles.name}>{name}</Text>
+            <Text style={styles.name}>{auth?.currentUser?.displayName}</Text>
 
             <View style={styles.info}>
                 <View>

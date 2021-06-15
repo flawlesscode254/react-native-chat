@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react'
-import { StyleSheet, Text, View, Image, TextInput, TouchableOpacity, KeyboardAvoidingView } from 'react-native'
-import db, { auth } from '../Firebase'
+import { StyleSheet, Text, View, Image, TextInput, TouchableOpacity, ToastAndroid, KeyboardAvoidingView, ActivityIndicator } from 'react-native'
+import db, { auth, store } from '../Firebase'
 import { AntDesign } from '@expo/vector-icons'
 import { FloatingAction } from 'react-native-floating-action';
 import * as ImagePicker from 'expo-image-picker'
+import firebase from 'firebase'
 
 const PostScreen = ({ navigation }) => {
-    const [name, setName] = useState()
+    const [caption, setCaption] = useState()
     const [teller, setTeller] = useState()
     const [image, setImage] = useState(null)
+    const [loading, setLoading] = useState(false);
     const [profile, setProfile] = useState()
+
+    const name = auth?.currentUser?.displayName
 
     const actions = [{
         text: 'Take Picture',
@@ -24,15 +28,13 @@ const PostScreen = ({ navigation }) => {
       }
     ];
 
-        navigation.addListener('focus', () => {
-            db.collection("posts").where("email", '==', auth?.currentUser?.email)
-            .onSnapshot((snapshot) => {
-                snapshot.forEach(doc => {
-                    setName(doc.data().name)
-                    setProfile(doc.data().image)
-                })
+    useEffect(() => {
+        db.collection("posts").where("email", '==', auth?.currentUser?.email).onSnapshot((snapshot) => {
+            snapshot.forEach(doc => {
+                setProfile(doc.data().image)
             })
         })
+    }, [])
 
 
     useEffect(() => {
@@ -46,7 +48,7 @@ const PostScreen = ({ navigation }) => {
         })();
       }, []);
 
-      const addProfile = () => {
+      const addProfile = (name) => {
           if (image && teller == "gallery") {
             let result = ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.All,
@@ -89,7 +91,7 @@ const PostScreen = ({ navigation }) => {
             setTeller(name)
           }
         }
-        else {
+        else if (name === "camera") {
             let result = await ImagePicker.launchCameraAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.All,
                 allowsEditing: true,
@@ -101,6 +103,44 @@ const PostScreen = ({ navigation }) => {
                 setTeller(name)
               }
           }
+    }
+
+    const ShowToast = () => {
+        ToastAndroid.show("Your post was successfully added", ToastAndroid.LONG)
+    }
+
+    const sendPost = async () => {
+        await setLoading(!loading)
+        const uri = image;
+        const refPath = `feed/${auth?.currentUser?.email}/${Math.random().toString(36)}`;
+
+        const response = await fetch(uri);
+        const blob = await response.blob();
+
+        try {
+            const storeRef = store.ref(refPath)
+            await storeRef.put(blob)
+            await storeRef.getDownloadURL().then(url => {
+                db.collection("feed").doc(name).set({
+                    name: name,
+                    image: url,
+                    profile: profile,
+                    caption: caption,
+                    likes: 0,
+                    dislikes: 0,
+                    comments: 0,
+                    shares: 0,
+                    time: firebase.firestore.FieldValue.serverTimestamp()
+                })
+            })
+        } catch (error) {
+            console.log(error);
+        }
+            await setImage(null)
+            await setCaption('')
+            await setLoading(loading)
+            await ShowToast()
+            await navigation.navigate("Home")
     }
 
     return (
@@ -129,10 +169,10 @@ const PostScreen = ({ navigation }) => {
             <View style={styles.postSection}>
                 <View style={styles.postSite}>
                     <Image style={styles.image} source={{ uri: profile }} />
-                    <TextInput autoFocus={true} multiline={true} numberOfLines={4} style={styles.input} placeholder="What is on your mind?" />
+                    <TextInput value={caption} onChangeText={(text) => setCaption(text)} autoFocus={true} multiline={true} numberOfLines={4} style={styles.input} placeholder="What is on your mind?" />
                 </View>
-                <TouchableOpacity style={styles.button}>
-                    <Text style={{color: "#FFF", fontWeight: "bold"}}>Post 🚀 🚀 </Text>
+                <TouchableOpacity onPress={sendPost} style={styles.button}>
+                    {loading ? <ActivityIndicator color="#ffffff" size="small" /> : <Text style={{color: "#FFF", fontWeight: "bold"}}>Post 🚀 🚀 </Text> }
                 </TouchableOpacity>
             </View>
             <View style={{height: 100}} />
