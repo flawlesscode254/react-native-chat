@@ -1,40 +1,85 @@
 import React, { useState } from 'react'
-import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native'
+import { StyleSheet, Text, View, Image, TouchableOpacity, Modal } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import db from '../Firebase'
+import db, { auth } from '../Firebase'
 import firebase from 'firebase'
+import { useNavigation } from '@react-navigation/native';
 
-const PostHelper = ({ profile, name, time, caption, image, likes, dislikes, comments, shares }) => {
-    const [col, setCol] = useState("black")
+
+const PostHelper = ({ id, profile, name, time, caption, image, likes, comments, shares, col }) => {
+    const [modalVisible, setModalVisible] = useState(false)
+    const navigation = useNavigation();
+    const uname = auth?.currentUser?.displayName
 
     const add = firebase.firestore.FieldValue.increment(1)
     const substract = firebase.firestore.FieldValue.increment(-1)
 
     const updateLikes = async () => {
         if (col === "black") {
-            await setCol("#E9446A")
-            await db.collection("feed").doc(name).update({
-                likes: add
+            await db.collection("feed").doc(id).update({
+                likes: add,
+                col: "#E9446A"
             })
         }
         else if (col === "#E9446A"){
-            await setCol("black")
-            await db.collection("feed").doc(name).update({
-                likes: substract
+            await db.collection("feed").doc(id).update({
+                likes: substract,
+                col: "black"
             })
         }
       
     }
 
+    const Send = () => {
+        navigation.navigate("Comments", {
+            username: name,
+            id: id,
+            name: uname
+        })
+    }
+
+    const saveFile = () => {
+        
+    }
+
     return (
         <View style={styles.post}>
+            <View style={styles.centeredView}>
+                <Modal
+                    animationType="slide"
+                    transparent={true}
+                    visible={modalVisible}
+                    onRequestClose={() => {
+                    Alert.alert("Modal has been closed.");
+                    setModalVisible(!modalVisible);
+                    }}
+                >
+                    <View style={styles.centeredView}>
+                    <View style={styles.modalView}>
+                            <Image  style={styles.image} source={{ uri: profile }} />
+                        <TouchableOpacity style={{
+                            backgroundColor: "blue",
+                            marginTop: 5,
+                            marginBottom: 5,
+                            paddingHorizontal: 20,
+                            borderRadius: 999
+                        }} onPress={() => setModalVisible(!modalVisible)}>
+                                <Text style={styles.textStyle}>X</Text>
+                        </TouchableOpacity>
+                    </View>
+                    </View>
+                </Modal>
+            </View>
+            
                         <View style={{
                             display: "flex",
                             flexDirection: "row",
                             justifyContent: "space-between",
                             alignItems: "center"
                         }}>
-                            <Image style={styles.chosen} source={{ uri: profile }} />
+                            <TouchableOpacity onPress={() => setModalVisible(true)}>
+                                <Image style={styles.chosen} source={{ uri: profile }} />
+                            </TouchableOpacity>
                             <TouchableOpacity style={styles.button}>
                                 <Text style={{color: "#FFF", fontWeight: "bold"}}>Follow 🐦 </Text>
                             </TouchableOpacity>
@@ -53,7 +98,7 @@ const PostHelper = ({ profile, name, time, caption, image, likes, dislikes, comm
                             }}>{name}</Text>
                             <Text style={{
                                 color: "#E9446A"
-                            }}>{new Date(time?.toDate()).toUTCString()}</Text>
+                            }}>{new Date(time?.toDate()).toDateString() + ' ' + ' '} <Text style={{color: "black"}}>{new Date(time?.toDate()).toLocaleTimeString()}</Text> </Text>
                             <Text style={{
                                 marginBottom: 10
                             }}>
@@ -65,7 +110,9 @@ const PostHelper = ({ profile, name, time, caption, image, likes, dislikes, comm
                             justifyContent: "center",
                             alignItems: "center"
                         }}>
-                            <Image style={styles.image} source={{ uri: image }} />
+                            <TouchableOpacity onPress={saveFile}>
+                                <Image style={styles.image} source={{ uri: image }} />
+                            </TouchableOpacity>
                         </View>
                         <View style={{
                             display: "flex",
@@ -76,32 +123,30 @@ const PostHelper = ({ profile, name, time, caption, image, likes, dislikes, comm
                             marginBottom: 10,
                             backgroundColor: "white",
                             borderRadius: 15,
-                            paddingVertical: 10
+                            paddingVertical: 5
                         }}>
+
                             <View>
                                 <TouchableOpacity onPress={updateLikes}>
                                     <Ionicons name="thumbs-up" color={col} size={24} />
                                     <Text style={{color: "gray"}}>{likes}</Text>
                                 </TouchableOpacity>
                             </View>
+
                            <View>
-                               <TouchableOpacity>
-                                   <Ionicons name="thumbs-down" size={24} />
-                                   <Text style={{color: "gray"}}>{dislikes}</Text>
-                               </TouchableOpacity>
-                           </View>
-                           <View>
-                               <TouchableOpacity>
+                               <TouchableOpacity onPress={Send}>
                                    <Ionicons name="chatbubbles" size={24} />
                                    <Text style={{color: "gray"}}>{comments}</Text>
                                </TouchableOpacity>
                            </View>
+
                            <View>
                                <TouchableOpacity>
                                     <Ionicons name="share" size={24} />
                                     <Text style={{color: "gray"}}>{shares}</Text>
                                </TouchableOpacity> 
                            </View>
+
                         </View>
                     </View>
     )
@@ -117,7 +162,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 10,
         borderRadius: 12,
-        marginBottom: 10
+        marginBottom: 10,
+        justifyContent: "center"
     },
     chosen: {
         height: 45,
@@ -137,5 +183,46 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         paddingHorizontal: 20
+    },
+    centeredView: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        marginTop: 22
+    },
+    modalView: {
+        margin: 20,
+        backgroundColor: "white",
+        borderRadius: 20,
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        width: 300,
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOffset: {
+          width: 0,
+          height: 2
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5
+    },
+    modalText: {
+        marginBottom: 15,
+        textAlign: "center"
+    },
+    textStyle: {
+        color: "white",
+        fontWeight: "bold",
+        textAlign: "center"
+    },
+    input: {
+        borderRadius: 10,
+        borderColor: "black",
+        borderWidth: 1,
+        marginBottom: 10,
+        paddingHorizontal: 10,
+        width: 280
     }
 })

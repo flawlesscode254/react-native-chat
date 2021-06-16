@@ -3,13 +3,14 @@ import "firebase/auth";
 import "firebase/firestore";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBp8wgvT-15awC9QfmHWnKTVicCPLTRQGg",
-    authDomain: "social-58568.firebaseapp.com",
-    projectId: "social-58568",
-    storageBucket: "social-58568.appspot.com",
-    messagingSenderId: "551962067624",
-    appId: "1:551962067624:web:c8e529347b0688f313789d",
-    measurementId: "G-YTBE89VMVS"
+    apiKey: "AIzaSyB9HHOMNjo7o0xnSvxniXQ5c-6t0awme9E",
+    authDomain: "pump-chat.firebaseapp.com",
+    databaseURL: "https://pump-chat-default-rtdb.firebaseio.com",
+    projectId: "pump-chat",
+    storageBucket: "pump-chat.appspot.com",
+    messagingSenderId: "214910864357",
+    appId: "1:214910864357:web:8fbdc47a87e89131357d0c",
+    measurementId: "G-S9C5VCHXZN"
 };
 
 let app;

@@ -8,47 +8,59 @@ const HomeScreen = ({ navigation }) => {
     const [feed, setFeed] = useState([])
 
     navigation.addListener('focus', async () => {
-       await db.collection('feed')
-        .orderBy('time', 'desc')
-        .onSnapshot(snapshot => (
-            setFeed(snapshot.docs.map(doc => ({
-                id: doc.id,
-                profile: doc.data().profile,
-                name: doc.data().name,
-                time: doc.data().time,
-                caption: doc.data().caption,
-                image: doc.data().image,
-                likes: doc.data().likes,
-                dislikes: doc.data().dislikes,
-                comments: doc.data().comments,
-                shares: doc.data().shares
-            })))
-        ))
-    })    
+        await db.collection('feed')
+                .orderBy('time', 'desc')
+                .onSnapshot(snapshot => (
+                    setFeed(snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        profile: doc.data().profile,
+                        name: doc.data().name,
+                        time: doc.data().time,
+                        caption: doc.data().caption,
+                        image: doc.data().image,
+                        likes: doc.data().likes,
+                        comments: doc.data().comments,
+                        shares: doc.data().shares,
+                        col: doc.data().col
+                    })))
+                ))
+    })
 
     return (
     <SafeAreaView>
+        <View style={styles.head}>
+                    <View style={{
+                        marginTop: 30,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        flexDirection: "row"
+                    }}>                       
+                        <Text style={{
+                            fontSize: 20,
+                            fontWeight: "bold",
+                            letterSpacing: 20
+                        }}>FEED</Text>
+                    </View>
+                </View>
         <ScrollView>
             <StatusBar barStyle = "dark-content" hidden = {false} backgroundColor = "white" translucent = {true} />
             <KeyboardAvoidingView behavior="padding" style={styles.container}>
                 <View style={{width: 320}}>
-                    <View style={styles.banner}>
-                        <Text style={{fontWeight: "bold", fontSize: 20 }}>FEED</Text>
-                    </View>
-
-                {feed.map(({ id, profile, name, time, caption, image, likes, dislikes, comments, shares }) => (
+                {feed.map(({ id, profile, name, time, caption, image, likes, comments, shares, col }) => (
                     <View>
                         <PostHelper
                             key={id}
+                            id={id}
                             profile={profile}
                             name={name}
                             time={time}
                             caption={caption}
                             image={image}
                             likes={likes}
-                            dislikes={dislikes}
                             comments={comments}
                             shares={shares}
+                            col={col}
                         />
                     </View>
                 ))}
@@ -68,14 +80,12 @@ const styles = StyleSheet.create({
         alignItems: "center",
         backgroundColor: "white"
     },
-    banner: {
-        display: "flex",
-        justifyContent: "space-around",
-        alignItems: "center",
+    head: {
         flexDirection: "row",
-        borderBottomWidth: 1,
-        height: 50,
-        borderBottomColor: "black",
-        marginTop: 30
-    }
+        width: "100%",
+        padding: 10,
+        alignItems: "center",
+        justifyContent: "center",
+        borderBottomWidth: 1
+      }
 })

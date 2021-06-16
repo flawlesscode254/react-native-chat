@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { StyleSheet, Text, View, Image, TextInput, TouchableOpacity, ToastAndroid, KeyboardAvoidingView, ActivityIndicator } from 'react-native'
+import { StyleSheet, Text, ScrollView, View, Image, TextInput, TouchableOpacity, ToastAndroid, KeyboardAvoidingView, ActivityIndicator } from 'react-native'
 import db, { auth, store } from '../Firebase'
 import { AntDesign } from '@expo/vector-icons'
 import { FloatingAction } from 'react-native-floating-action';
@@ -8,7 +8,6 @@ import firebase from 'firebase'
 
 const PostScreen = ({ navigation }) => {
     const [caption, setCaption] = useState()
-    const [teller, setTeller] = useState()
     const [image, setImage] = useState(null)
     const [loading, setLoading] = useState(false);
     const [profile, setProfile] = useState()
@@ -48,34 +47,6 @@ const PostScreen = ({ navigation }) => {
         })();
       }, []);
 
-      const addProfile = (name) => {
-          if (image && teller == "gallery") {
-            let result = ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.All,
-                allowsEditing: true,
-                aspect: [4, 3],
-                quality: 1,
-            });
-
-      
-          if (!result.cancelled) {
-            setImage(result.uri);
-          }
-          }
-          else if (image && teller == "camera"){
-            let result = ImagePicker.launchCameraAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.All,
-                allowsEditing: true,
-                aspect: [4, 3],
-                quality: 1,
-            });
-            if (!result.cancelled) {
-                setImage(result.uri)
-                setTeller(name)
-              }
-          }
-      }
-
     const addProfilePhoto = async (name) => {
         if (name === "gallery" ){
             let result = await ImagePicker.launchImageLibraryAsync({
@@ -88,7 +59,6 @@ const PostScreen = ({ navigation }) => {
       
           if (!result.cancelled) {
             setImage(result.uri);
-            setTeller(name)
           }
         }
         else if (name === "camera") {
@@ -100,7 +70,6 @@ const PostScreen = ({ navigation }) => {
             });
             if (!result.cancelled) {
                 setImage(result.uri)
-                setTeller(name)
               }
           }
     }
@@ -121,16 +90,16 @@ const PostScreen = ({ navigation }) => {
             const storeRef = store.ref(refPath)
             await storeRef.put(blob)
             await storeRef.getDownloadURL().then(url => {
-                db.collection("feed").doc(name).set({
+                db.collection("feed").add({
                     name: name,
                     image: url,
                     profile: profile,
                     caption: caption,
                     likes: 0,
-                    dislikes: 0,
                     comments: 0,
                     shares: 0,
-                    time: firebase.firestore.FieldValue.serverTimestamp()
+                    time: firebase.firestore.FieldValue.serverTimestamp(),
+                    col: "black"
                 })
             })
         } catch (error) {
@@ -145,14 +114,24 @@ const PostScreen = ({ navigation }) => {
 
     return (
         <KeyboardAvoidingView behavior="padding" style={styles.container}>
-            <View>
-            <View style={styles.banner}>
-                <Text style={{fontWeight: "bold", fontSize: 20 }}>POST</Text>
-            </View>
+           <View style={styles.head}>
+                    <View style={{
+                        marginTop: 30,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        flexDirection: "row"
+                    }}>                       
+                        <Text style={{
+                            fontSize: 20,
+                            fontWeight: "bold",
+                            letterSpacing: 20
+                        }}>POST</Text>
+                    </View>
+                </View>
+            <ScrollView>
             <View style={styles.chose}>
-                <TouchableOpacity onPress={addProfile}>
                     <Image style={styles.chosen} source={{ uri: image }} />
-                </TouchableOpacity>
                 <FloatingAction
                         actions={actions}
                         buttonSize={50}
@@ -175,8 +154,8 @@ const PostScreen = ({ navigation }) => {
                     {loading ? <ActivityIndicator color="#ffffff" size="small" /> : <Text style={{color: "#FFF", fontWeight: "bold"}}>Post 🚀 🚀 </Text> }
                 </TouchableOpacity>
             </View>
+            </ScrollView>
             <View style={{height: 100}} />
-            </View>
         </KeyboardAvoidingView>
     )
 }
@@ -197,15 +176,6 @@ const styles = StyleSheet.create({
         alignItems: "center",
         flexDirection: "row",
         marginTop: 10
-    },
-    banner: {
-        display: "flex",
-        justifyContent: "space-around",
-        alignItems: "center",
-        flexDirection: "row",
-        borderBottomWidth: 1,
-        height: 50,
-        borderBottomColor: "black"
     },
     image: {
         height: 45,
@@ -240,5 +210,13 @@ const styles = StyleSheet.create({
         alignItems: "center",
         marginTop: 20,
         marginBottom: 10
-    }
+    },
+    head: {
+        flexDirection: "row",
+        width: "100%",
+        padding: 10,
+        alignItems: "center",
+        justifyContent: "center",
+        borderBottomWidth: 1
+      }
 })
